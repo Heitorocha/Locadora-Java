@@ -1,4 +1,6 @@
-package locadora;
+
+package locadora.src.javaapplication10;
+
 
 public class Cliente {
     private String cpf;
