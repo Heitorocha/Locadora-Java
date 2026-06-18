@@ -15,13 +15,25 @@ public abstract class Veiculo implements IVeiculo {
     private String marca;
     private boolean seguro;
 
-    public Veiculo(String placa, String modelo, double valorDiaria, String cor, String marca, boolean seguro) {
+    // Controle de disponibilidade
+    private boolean disponivel;
+
+    public Veiculo(String placa,
+                   String modelo,
+                   double valorDiaria,
+                   String cor,
+                   String marca,
+                   boolean seguro) {
+
         this.placa = placa;
         this.modelo = modelo;
         this.valorDiaria = valorDiaria;
         this.cor = cor;
         this.marca = marca;
         this.seguro = seguro;
+
+        // Todo veículo inicia disponível
+        this.disponivel = true;
     }
 
     public String getPlaca() {
@@ -72,11 +84,35 @@ public abstract class Veiculo implements IVeiculo {
         this.seguro = seguro;
     }
 
+    /**
+     * Verifica se o veículo está disponível para locação.
+     */
+    public boolean isDisponivel() {
+        return disponivel;
+    }
+
+    /**
+     * Atualiza a disponibilidade do veículo.
+     */
+    public void setDisponivel(boolean disponivel) {
+        this.disponivel = disponivel;
+    }
+
     public abstract String getTipo();
 
     @Override
     public String toString() {
-        return String.format("%s{placa=%s, modelo=%s, diaria=%.2f, cor=%s, marca=%s, seguro=%s}",
-                getTipo(), placa, modelo, valorDiaria, cor, marca, seguro ? "sim" : "não");
+
+        return String.format(
+                "%s{placa=%s, modelo=%s, diaria=%.2f, cor=%s, marca=%s, seguro=%s, status=%s}",
+                getTipo(),
+                placa,
+                modelo,
+                valorDiaria,
+                cor,
+                marca,
+                seguro ? "sim" : "não",
+                disponivel ? "Disponível" : "Alugado"
+        );
     }
 }
