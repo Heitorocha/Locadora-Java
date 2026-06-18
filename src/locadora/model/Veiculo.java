@@ -1,14 +1,19 @@
+package locadora.model;
 
-package locadora.src.javaapplication10;
+import locadora.interfaces.IVeiculo;
 
-public abstract class Veiculo {
+/**
+ * Classe abstrata que representa um veículo da locadora.
+ * Utiliza polimorfismo para permitir carros e motos como tipos concretos.
+ */
+public abstract class Veiculo implements IVeiculo {
+
     private String placa;
     private String modelo;
     private double valorDiaria;
     private String cor;
     private String marca;
     private boolean seguro;
-    
 
     public Veiculo(String placa, String modelo, double valorDiaria, String cor, String marca, boolean seguro) {
         this.placa = placa;
@@ -66,11 +71,12 @@ public abstract class Veiculo {
     public void setSeguro(boolean seguro) {
         this.seguro = seguro;
     }
-    
+
+    public abstract String getTipo();
+
     @Override
     public String toString() {
-        return "Veiculo{" + "placa=" + placa + ", modelo=" + modelo + '}';
+        return String.format("%s{placa=%s, modelo=%s, diaria=%.2f, cor=%s, marca=%s, seguro=%s}",
+                getTipo(), placa, modelo, valorDiaria, cor, marca, seguro ? "sim" : "não");
     }
-    
-    
 }

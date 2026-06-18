@@ -1,4 +1,4 @@
-package locadora.src.javaapplication10;
+package locadora.interfaces;
 
 // Interface que define as operações de um cliente
 public interface ICliente {
