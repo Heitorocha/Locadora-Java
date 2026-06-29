@@ -36,5 +36,7 @@ public interface ILocadora {
 
     Aluguel alugarVeiculo(Cliente cliente, Veiculo veiculo, int dias) throws LocadoraException;
 
+    Aluguel alugarVeiculo(Cliente cliente, Veiculo veiculo, int dias, boolean comSeguro) throws LocadoraException;
+
     List<Aluguel> listarAlugueis();
 }

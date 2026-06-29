@@ -16,6 +16,11 @@ import java.util.List;
  */
 public class Locadora implements ILocadora {
 
+    public enum TipoUsuario {
+        CLIENTE,
+        FUNCIONARIO
+    }
+
     // Listas principais do sistema
     private final List<Veiculo> veiculos;
     private final List<Cliente> clientes;
@@ -134,6 +139,54 @@ public class Locadora implements ILocadora {
     }
 
     /**
+     * Busca um funcionário pelo CPF.
+     */
+    public Funcionario buscarFuncionarioPorCpf(String cpf) {
+
+        for (Funcionario funcionario : funcionarios) {
+
+            if (funcionario.getCpf().equals(cpf)) {
+                return funcionario;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Autentica um usuário e identifica se ele é cliente ou funcionário.
+     */
+    public TipoUsuario autenticar(String usuario, String senha)
+            throws LocadoraException {
+
+        if (usuario == null || usuario.trim().isEmpty()) {
+            throw new LocadoraException(
+                    "Informe o CPF de acesso.");
+        }
+
+        if (senha == null || senha.trim().isEmpty()) {
+            throw new LocadoraException(
+                    "Informe a senha.");
+        }
+
+        String cpf = usuario.trim();
+        String senhaInformada = senha.trim();
+
+        if (buscarClientePorCpf(cpf) != null
+                && "cliente".equalsIgnoreCase(senhaInformada)) {
+            return TipoUsuario.CLIENTE;
+        }
+
+        if (buscarFuncionarioPorCpf(cpf) != null
+                && "funcionario".equalsIgnoreCase(senhaInformada)) {
+            return TipoUsuario.FUNCIONARIO;
+        }
+
+        throw new LocadoraException(
+                "Usuário ou senha inválidos.");
+    }
+
+    /**
      * Busca um veículo pela placa.
      */
     public Veiculo buscarVeiculoPorPlaca(String placa) {
@@ -165,6 +218,15 @@ public class Locadora implements ILocadora {
             Veiculo veiculo,
             int dias)
             throws LocadoraException {
+        return alugarVeiculo(cliente, veiculo, dias, false);
+    }
+
+    public Aluguel alugarVeiculo(
+            Cliente cliente,
+            Veiculo veiculo,
+            int dias,
+            boolean comSeguro)
+            throws LocadoraException {
 
         if (cliente == null) {
             throw new LocadoraException(
@@ -187,9 +249,11 @@ public class Locadora implements ILocadora {
                     "O número de dias deve ser maior que zero.");
         }
 
+        boolean seguroSelecionado = comSeguro && veiculo.temSeguro();
+
         // Calcula o valor total da locação
         double valorTotal =
-                veiculo.getValorDiaria() * dias;
+                veiculo.calcularValorLocacao(dias, seguroSelecionado);
 
         // Verifica saldo disponível do cliente
         if (valorTotal > cliente.getSaldo()) {
@@ -208,7 +272,8 @@ public class Locadora implements ILocadora {
                 new Aluguel(
                         cliente,
                         veiculo,
-                        dias);
+                        dias,
+                        seguroSelecionado);
 
         alugueis.add(aluguel);
 

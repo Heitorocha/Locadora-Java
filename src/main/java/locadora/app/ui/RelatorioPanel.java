@@ -132,7 +132,7 @@ public class RelatorioPanel extends JPanel {
 
             case "Veículos Cadastrados":
 
-                resultadoArea.append("=== VEÍCULOS ===\n\n");
+                resultadoArea.append("=== VEICULOS ===\n\n");
 
                 for (Veiculo veiculo : locadora.getVeiculos()) {
                     resultadoArea.append(veiculo + "\n");
@@ -165,7 +165,7 @@ public class RelatorioPanel extends JPanel {
                         (Veiculo) filtroCombo.getSelectedItem();
 
                 resultadoArea.append(
-                        "=== ALUGUÉIS DO VEÍCULO ===\n\n");
+                        "=== ALUGUEIS DO VEICULO ===\n\n");
 
                 for (Aluguel aluguel : locadora.getAlugueis()) {
 

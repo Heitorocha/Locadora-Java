@@ -9,33 +9,20 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-/**
- * Painel responsável pelo gerenciamento de veículos.
- * Permite cadastrar, visualizar e excluir veículos.
- */
 public class VeiculoPanel extends JPanel {
 
-    // Referência para a locadora
     private final Locadora locadora;
-
-    // Componentes da tabela
     private DefaultTableModel model;
     private JTable tabela;
-
-    // Campos do formulário
     private JComboBox<String> tipoCombo;
-
     private JTextField placaField;
     private JTextField modeloField;
     private JTextField marcaField;
     private JTextField corField;
     private JTextField diariaField;
+    private JCheckBox seguroCheck;
+    private Veiculo veiculoSelecionado;
 
-    private JCheckBox opcionalCheck;
-
-    /**
-     * Construtor do painel.
-     */
     public VeiculoPanel(Locadora locadora) {
 
         this.locadora = locadora;
@@ -48,9 +35,6 @@ public class VeiculoPanel extends JPanel {
         atualizarTabela();
     }
 
-    /**
-     * Cria o formulário de cadastro.
-     */
     private void criarFormulario() {
 
         JPanel formulario =
@@ -76,12 +60,12 @@ public class VeiculoPanel extends JPanel {
         corField = new JTextField(20);
         diariaField = new JTextField(20);
 
-        opcionalCheck =
+        seguroCheck =
                 new JCheckBox(
-                        "Possui Seguro / Capacete");
+                        "Disponibilizar seguro para locação (+25%)");
 
-        JButton cadastrarBtn =
-                new JButton("Cadastrar");
+        JButton salvarBtn =
+                new JButton("Salvar");
 
         JButton limparBtn =
                 new JButton("Limpar");
@@ -89,7 +73,6 @@ public class VeiculoPanel extends JPanel {
         JButton excluirBtn =
                 new JButton("Excluir");
 
-        // Tipo
         c.gridx = 0;
         c.gridy = 0;
         formulario.add(
@@ -99,7 +82,6 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 tipoCombo, c);
 
-        // Placa
         c.gridx = 0;
         c.gridy = 1;
         formulario.add(
@@ -109,7 +91,6 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 placaField, c);
 
-        // Modelo
         c.gridx = 0;
         c.gridy = 2;
         formulario.add(
@@ -119,7 +100,6 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 modeloField, c);
 
-        // Marca
         c.gridx = 0;
         c.gridy = 3;
         formulario.add(
@@ -129,7 +109,6 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 marcaField, c);
 
-        // Cor
         c.gridx = 0;
         c.gridy = 4;
         formulario.add(
@@ -139,7 +118,6 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 corField, c);
 
-        // Diária
         c.gridx = 0;
         c.gridy = 5;
         formulario.add(
@@ -149,33 +127,28 @@ public class VeiculoPanel extends JPanel {
         formulario.add(
                 diariaField, c);
 
-        // Seguro / Capacete
         c.gridx = 0;
         c.gridy = 6;
         c.gridwidth = 2;
-
         formulario.add(
-                opcionalCheck, c);
+                seguroCheck, c);
 
-        // Painel dos botões
         JPanel botoes =
                 new JPanel(new FlowLayout());
 
-        botoes.add(cadastrarBtn);
+        botoes.add(salvarBtn);
         botoes.add(limparBtn);
         botoes.add(excluirBtn);
 
         c.gridy = 7;
-
         formulario.add(
                 botoes, c);
 
         add(formulario,
                 BorderLayout.NORTH);
 
-        // Eventos
-        cadastrarBtn.addActionListener(
-                e -> cadastrarVeiculo());
+        salvarBtn.addActionListener(
+                e -> salvarVeiculo());
 
         limparBtn.addActionListener(
                 e -> limparCampos());
@@ -184,9 +157,6 @@ public class VeiculoPanel extends JPanel {
                 e -> excluirVeiculo());
     }
 
-    /**
-     * Cria a tabela de veículos.
-     */
     private void criarTabela() {
 
         model = new DefaultTableModel();
@@ -196,37 +166,35 @@ public class VeiculoPanel extends JPanel {
         model.addColumn("Modelo");
         model.addColumn("Marca");
         model.addColumn("Diária");
+        model.addColumn("Seguro");
         model.addColumn("Status");
 
         tabela = new JTable(model);
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         tabela.getSelectionModel()
                 .addListSelectionListener(e -> {
+
+                    if (e.getValueIsAdjusting()) {
+                        return;
+                    }
 
                     int linha =
                             tabela.getSelectedRow();
 
                     if (linha >= 0) {
 
-                        placaField.setText(
-                                model.getValueAt(
-                                        linha, 1).toString());
+                        Veiculo veiculo =
+                                locadora.getVeiculos().get(linha);
 
-                        modeloField.setText(
-                                model.getValueAt(
-                                        linha, 2).toString());
-
-                        marcaField.setText(
-                                model.getValueAt(
-                                        linha, 3).toString());
-
-                        String diaria =
-                                model.getValueAt(
-                                        linha, 4).toString()
-                                        .replace("R$ ", "")
-                                        .replace(",", ".");
-
-                        diariaField.setText(diaria);
+                        veiculoSelecionado = veiculo;
+                        tipoCombo.setSelectedItem(veiculo.getTipo());
+                        placaField.setText(veiculo.getPlaca());
+                        modeloField.setText(veiculo.getModelo());
+                        marcaField.setText(veiculo.getMarca());
+                        corField.setText(veiculo.getCor());
+                        diariaField.setText(String.format("%.2f", veiculo.getValorDiaria()));
+                        seguroCheck.setSelected(veiculo.temSeguro());
                     }
                 });
 
@@ -234,10 +202,7 @@ public class VeiculoPanel extends JPanel {
                 BorderLayout.CENTER);
     }
 
-    /**
-     * Cadastra um novo veículo.
-     */
-    private void cadastrarVeiculo() {
+    private void salvarVeiculo() {
 
         try {
 
@@ -260,42 +225,39 @@ public class VeiculoPanel extends JPanel {
                     Double.parseDouble(
                             diariaField.getText());
 
-            if (tipo.equals("Carro")) {
+            boolean seguro = seguroCheck.isSelected();
 
-                locadora.adicionarVeiculo(
+            if (veiculoSelecionado != null) {
 
-                        new Carro(
-                                placa,
-                                modelo,
-                                diaria,
-                                cor,
-                                marca,
-                                opcionalCheck.isSelected()
-                        )
-                );
+                if (!veiculoSelecionado.getTipo().equals(tipo)) {
+                    locadora.getVeiculos().remove(veiculoSelecionado);
+                    locadora.adicionarVeiculo(
+                            criarVeiculo(tipo, placa, modelo, diaria, cor, marca, seguro));
+                } else {
+                    veiculoSelecionado.setPlaca(placa);
+                    veiculoSelecionado.setModelo(modelo);
+                    veiculoSelecionado.setMarca(marca);
+                    veiculoSelecionado.setCor(cor);
+                    veiculoSelecionado.setValorDiaria(diaria);
+                    veiculoSelecionado.setSeguro(seguro);
+                }
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Veículo atualizado com sucesso!");
 
             } else {
 
                 locadora.adicionarVeiculo(
+                        criarVeiculo(tipo, placa, modelo, diaria, cor, marca, seguro));
 
-                        new Moto(
-                                placa,
-                                modelo,
-                                diaria,
-                                cor,
-                                marca,
-                                opcionalCheck.isSelected()
-                        )
-                );
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Veículo cadastrado com sucesso!");
             }
 
             atualizarTabela();
-
             limparCampos();
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Veículo cadastrado com sucesso!");
 
         } catch (Exception ex) {
 
@@ -305,9 +267,21 @@ public class VeiculoPanel extends JPanel {
         }
     }
 
-    /**
-     * Remove o veículo selecionado.
-     */
+    private Veiculo criarVeiculo(String tipo,
+                                 String placa,
+                                 String modelo,
+                                 double diaria,
+                                 String cor,
+                                 String marca,
+                                 boolean seguro) {
+
+        if ("Carro".equals(tipo)) {
+            return new Carro(placa, modelo, diaria, cor, marca, seguro);
+        }
+
+        return new Moto(placa, modelo, diaria, cor, marca, seguro);
+    }
+
     private void excluirVeiculo() {
 
         int linha =
@@ -338,9 +312,6 @@ public class VeiculoPanel extends JPanel {
                 "Veículo removido.");
     }
 
-    /**
-     * Limpa os campos do formulário.
-     */
     private void limparCampos() {
 
         placaField.setText("");
@@ -348,15 +319,12 @@ public class VeiculoPanel extends JPanel {
         marcaField.setText("");
         corField.setText("");
         diariaField.setText("");
-
-        opcionalCheck.setSelected(false);
-
+        seguroCheck.setSelected(false);
+        tipoCombo.setSelectedIndex(0);
+        veiculoSelecionado = null;
         tabela.clearSelection();
     }
 
-    /**
-     * Atualiza a tabela com os dados atuais.
-     */
     public void atualizarTabela() {
 
         model.setRowCount(0);
@@ -373,7 +341,7 @@ public class VeiculoPanel extends JPanel {
                     String.format(
                             "R$ %.2f",
                             veiculo.getValorDiaria()),
-
+                    veiculo.temSeguro() ? "Sim" : "Nao",
                     veiculo.isDisponivel()
                             ? "Disponível"
                             : "Alugado"

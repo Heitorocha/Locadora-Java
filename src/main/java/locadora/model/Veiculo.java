@@ -60,6 +60,11 @@ public abstract class Veiculo implements IVeiculo {
         this.valorDiaria = valorDiaria;
     }
 
+    public double calcularValorLocacao(int dias, boolean comSeguro) {
+        double valorBase = valorDiaria * dias;
+        return comSeguro ? valorBase * 1.25 : valorBase;
+    }
+
     public String getCor() {
         return cor;
     }

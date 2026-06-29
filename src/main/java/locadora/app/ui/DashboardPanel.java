@@ -95,23 +95,23 @@ public class DashboardPanel extends JPanel {
         }
 
         clientesLabel.setText(
-                "👤 Clientes cadastrados: "
+                "[P] Clientes cadastrados: "
                         + locadora.getClientes().size());
 
         veiculosLabel.setText(
-                "🚗 Veículos cadastrados: "
+                "[Car] Veiculos cadastrados: "
                         + locadora.getVeiculos().size());
 
         disponiveisLabel.setText(
-                "✅ Veículos disponíveis: "
+                "[OK] Veiculos disponiveis: "
                         + disponiveis);
 
         alugadosLabel.setText(
-                "❌ Veículos alugados: "
+                "[X] Veiculos alugados: "
                         + alugados);
 
         alugueisLabel.setText(
-                "📄 Total de aluguéis: "
+                "[PDF] Total de alugueis: "
                         + locadora.getAlugueis().size());
 
         historicoArea.setText("");

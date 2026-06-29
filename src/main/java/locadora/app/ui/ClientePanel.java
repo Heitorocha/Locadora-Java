@@ -7,10 +7,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-/**
- * Painel responsável pelo gerenciamento de clientes.
- * Permite cadastrar, visualizar e excluir clientes.
- */
 public class ClientePanel extends JPanel {
 
     // Referência para a locadora

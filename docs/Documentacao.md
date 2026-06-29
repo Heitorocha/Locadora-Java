@@ -13,11 +13,51 @@ Este projeto implementa um sistema de locadora de veículos em Java com interfac
 - arquitetura em camadas (`app`, `service`, `model`, `interfaces`, `exception`)
 - interface gráfica com Swing
 - cadastro de clientes e veículos
-- realização de aluguéis
+- realização de aluguéis com opção de seguro
 
 ---
 
-## 2. Estrutura de Pacotes
+## 2. Estrutura do Projeto
+
+A estrutura do repositório foi organizada da seguinte forma:
+
+```text
+src/
+  main/
+    java/
+      locadora/
+        app/
+          Main.java
+          ui/
+            AluguelPanel.java
+            ClientePanel.java
+            DashboardFrame.java
+            DashboardPanel.java
+            LoginFrame.java
+            RelatorioPanel.java
+            VeiculoPanel.java
+        exception/
+          LocadoraException.java
+        interfaces/
+          ICliente.java
+          ILocadora.java
+          IVeiculo.java
+        model/
+          Aluguel.java
+          Carro.java
+          Cliente.java
+          Funcionario.java
+          Pessoa.java
+          Veiculo.java
+          Moto.java
+        service/
+          Locadora.java
+
+docs/
+  Documentacao.md
+```
+
+### Responsabilidade dos pacotes
 
 - `locadora.interfaces`
   - contém as interfaces do domínio: `ICliente`, `IVeiculo` e `ILocadora`
@@ -26,7 +66,7 @@ Este projeto implementa um sistema de locadora de veículos em Java com interfac
 - `locadora.service`
   - contém a classe `Locadora` com a lógica de negócio
 - `locadora.app`
-  - contém a aplicação principal com interface gráfica em `Main`
+  - contém a aplicação principal e os painéis da interface gráfica
 - `locadora.exception`
   - contém a exceção customizada `LocadoraException`
 
@@ -36,10 +76,11 @@ Este projeto implementa um sistema de locadora de veículos em Java com interfac
 
 A aplicação permite:
 
-- cadastrar clientes por meio da aba de funcionário
-- cadastrar veículos por meio da aba de funcionário
-- selecionar cliente e veículo para realizar um aluguel
-- gerar relatório com veículos, clientes e aluguéis
+- autenticar usuários como cliente ou funcionário
+- cadastrar veículos e editar seus dados por meio da aba de funcionário
+- habilitar ou não a opção de seguro no cadastro de veículo
+- realizar aluguéis com opção de seguro, adicionando 25% ao valor total
+- gerar relatórios com veículos, clientes e aluguéis
 - validar dados de entrada (CPF, nome, saldo, placa, diária, cor, marca, dias)
 - tratar exceções de negócio, como saldo insuficiente e dados inválidos
 
@@ -95,6 +136,7 @@ Define o contrato para a classe de serviço `Locadora`:
 - `Cliente buscarClientePorCpf(String cpf)`
 - `Veiculo buscarVeiculoPorPlaca(String placa)`
 - `Aluguel alugarVeiculo(Cliente cliente, Veiculo veiculo, int dias) throws LocadoraException`
+- `Aluguel alugarVeiculo(Cliente cliente, Veiculo veiculo, int dias, boolean comSeguro) throws LocadoraException`
 - `List<Aluguel> listarAlugueis()`
 
 ### 4.4 `locadora.model.Pessoa`
@@ -167,6 +209,7 @@ Atributos:
 - `cliente`
 - `veiculo`
 - `dias`
+- `comSeguro`
 - `valorTotal`
 
 ### 4.11 `locadora.service.Locadora`
@@ -178,7 +221,8 @@ Responsabilidades:
 - armazenar listas de clientes, veículos, funcionários e aluguéis
 - cadastrar clientes, veículos e funcionários
 - realizar buscas por CPF e placa
-- efetuar aluguéis com validação de saldo e dias
+- autenticar usuários como cliente ou funcionário
+- efetuar aluguéis com validação de saldo, dias e seguro
 - listar registros do sistema
 
 ### 4.12 `locadora.exception.LocadoraException`
@@ -187,12 +231,17 @@ Exceção customizada usada para erros de negócio.
 
 ### 4.13 `locadora.app.Main`
 
-Interface gráfica em Swing com abas para:
+Ponto de entrada da aplicação. Inicia a interface gráfica em Swing e abre a tela de login.
 
-- aluguel de veículo
-- cadastro de cliente
-- cadastro de veículo
-- relatório do sistema
+### 4.14 `locadora.app.ui`
+
+Pacote com os painéis e telas da interface:
+
+- `LoginFrame` para autenticação
+- `DashboardFrame` para navegação por perfil
+- `VeiculoPanel` para cadastro e edição de veículos
+- `AluguelPanel` para realização de aluguéis com seguro
+- `RelatorioPanel` para geração de relatórios
 
 ---
 
@@ -201,7 +250,7 @@ Interface gráfica em Swing com abas para:
 1. Compile o projeto:
 
 ```powershell
-javac -d bin src\locadora\**\*.java
+javac -d bin $(Get-ChildItem -Recurse -Filter *.java -Path src/main/java | ForEach-Object { $_.FullName })
 ```
 
 2. Execute a aplicação:
@@ -214,19 +263,18 @@ java -cp bin locadora.app.Main
 
 ## 6. Guia rápido de uso
 
-- Abra a aplicação e selecione a aba "Funcionário" para registrar clientes ou veículos.
-- Escolha "Cadastrar cliente" para preencher CPF, nome e saldo inicial.
-- Escolha "Cadastrar veículo" para preencher tipo, placa, modelo, diária, cor, marca e seguro.
-- Use a aba "Aluguel" para selecionar um cliente, um veículo e informar a quantidade de dias.
+- Abra a aplicação e faça login com um CPF cadastrado.
+- Use a senha `cliente` para acessar o perfil de cliente ou `funcionario` para o perfil de funcionário.
+- No painel de funcionário, utilize a aba de veículos para cadastrar ou editar um veículo.
+- O funcionário pode habilitar a opção de seguro no cadastro do veículo.
+- Na aba de aluguel, selecione um cliente, um veículo e informe a quantidade de dias.
+- Marque a opção de seguro para somar 25% ao valor total do aluguel.
 - Clique em "Realizar aluguel" para concluir a reserva; o sistema desconta o valor do saldo do cliente.
 - Clique em "Gerar relatório" para ver a lista atual de veículos, clientes e aluguéis.
 
 ## 7. Observações
 
-- O cadastro de veículo e cliente está separado no formulário de funcionário.
-- O cadastro de veículo não usa CPF, nome ou saldo de cliente.
-- O funcionário informa tipo, placa, modelo, diária, cor, marca e seguro do veículo.
-- O cliente realiza aluguel selecionando veículo, cliente e número de dias.
-- O relatório exibido na interface lista apenas veículos, clientes e aluguéis.
-- O sistema não mostra funcionários registrados no relatório.
+- A interface separa permissões entre cliente e funcionário.
+- O cadastro de veículo pode ser feito e editado pela área do funcionário.
+- O seguro é opcional no aluguel e somente está disponível para veículos que possuem essa opção habilitada.
 - O sistema trata entradas inválidas e exibe mensagens de erro apropriadas.
