@@ -1,12 +1,11 @@
 package locadora.app.ui;
 
+import java.awt.*;
+import javax.swing.*;
 import locadora.model.Aluguel;
 import locadora.model.Cliente;
 import locadora.model.Veiculo;
 import locadora.service.Locadora;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class RelatorioPanel extends JPanel {
 
@@ -20,6 +19,8 @@ public class RelatorioPanel extends JPanel {
         this.locadora = locadora;
 
         setLayout(new BorderLayout(10, 10));
+
+        locadora.adicionarListener(this::atualizarDados);
 
         JPanel topo = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
@@ -57,6 +58,11 @@ public class RelatorioPanel extends JPanel {
         tipoRelatorio.addActionListener(e -> atualizarFiltro());
 
         gerarBtn.addActionListener(e -> gerarRelatorio());
+    }
+
+    private void atualizarDados() {
+        atualizarFiltro();
+        gerarRelatorio();
     }
 
     private void atualizarFiltro() {

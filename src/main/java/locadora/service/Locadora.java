@@ -1,5 +1,12 @@
 package locadora.service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import locadora.exception.LocadoraException;
 import locadora.interfaces.ILocadora;
 import locadora.model.Aluguel;
@@ -8,14 +15,6 @@ import locadora.model.Cliente;
 import locadora.model.Funcionario;
 import locadora.model.Moto;
 import locadora.model.Veiculo;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Classe responsável por gerenciar toda a lógica da locadora.
@@ -28,13 +27,23 @@ public class Locadora implements ILocadora {
         FUNCIONARIO
     }
 
-    private static final String ARQUIVO_VEICULOS = "veiculos.txt";
+    public interface LocadoraListener {
+        void dadosAtualizados();
+    }
 
-    // Listas principais do sistema
+    private static final String ARQUIVO_VEICULOS = "veiculos.txt";
+    private static final String ARQUIVO_CLIENTES = "clientes.txt";
+    private static final String ARQUIVO_FUNCIONARIOS = "funcionarios.txt";
+    private static final String ARQUIVO_ALUGUEIS = "alugueis.txt";
+
     private final List<Veiculo> veiculos;
     private final List<Cliente> clientes;
     private final List<Funcionario> funcionarios;
     private final List<Aluguel> alugueis;
+    private final List<LocadoraListener> listeners;
+    private Cliente clienteLogado;
+    private Funcionario funcionarioLogado;
+    private TipoUsuario tipoUsuarioLogado;
 
     /**
      * Inicializa as listas da locadora.
@@ -45,30 +54,104 @@ public class Locadora implements ILocadora {
         clientes = new ArrayList<>();
         funcionarios = new ArrayList<>();
         alugueis = new ArrayList<>();
+        listeners = new ArrayList<>();
+        clienteLogado = null;
+        funcionarioLogado = null;
+        tipoUsuarioLogado = null;
 
+        carregarClientesDoArquivo();
+        carregarFuncionariosDoArquivo();
         carregarVeiculosDoArquivo();
+        carregarAlugueisDoArquivo();
+    }
+
+    public void adicionarListener(LocadoraListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removerListener(LocadoraListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notificarMudanca() {
+        for (LocadoraListener listener : new ArrayList<>(listeners)) {
+            listener.dadosAtualizados();
+        }
     }
 
     /**
      * Adiciona um veículo ao sistema.
      */
     public void adicionarVeiculo(Veiculo veiculo) {
+        if (veiculo == null) {
+            return;
+        }
+
         veiculos.add(veiculo);
         salvarVeiculos();
+        notificarMudanca();
+    }
+
+    public void removerVeiculo(Veiculo veiculo) {
+        if (veiculo == null) {
+            return;
+        }
+
+        veiculos.remove(veiculo);
+        removerAlugueisDoVeiculo(veiculo);
+        salvarVeiculos();
+        salvarAlugueis();
+        notificarMudanca();
     }
 
     /**
      * Adiciona um cliente ao sistema.
      */
     public void adicionarCliente(Cliente cliente) {
+        if (cliente == null) {
+            return;
+        }
+
         clientes.add(cliente);
+        salvarClientes();
+        notificarMudanca();
+    }
+
+    public void removerCliente(Cliente cliente) {
+        if (cliente == null) {
+            return;
+        }
+
+        clientes.remove(cliente);
+        removerAlugueisDoCliente(cliente);
+        salvarClientes();
+        salvarAlugueis();
+        notificarMudanca();
     }
 
     /**
      * Adiciona um funcionário ao sistema.
      */
     public void adicionarFuncionario(Funcionario funcionario) {
+        if (funcionario == null) {
+            return;
+        }
+
         funcionarios.add(funcionario);
+        salvarFuncionarios();
+        notificarMudanca();
+    }
+
+    public void removerFuncionario(Funcionario funcionario) {
+        if (funcionario == null) {
+            return;
+        }
+
+        funcionarios.remove(funcionario);
+        salvarFuncionarios();
+        notificarMudanca();
     }
 
     /**
@@ -128,6 +211,18 @@ public class Locadora implements ILocadora {
         return funcionarios;
     }
 
+    public Cliente getClienteLogado() {
+        return clienteLogado;
+    }
+
+    public Funcionario getFuncionarioLogado() {
+        return funcionarioLogado;
+    }
+
+    public TipoUsuario getTipoUsuarioLogado() {
+        return tipoUsuarioLogado;
+    }
+
     /**
      * Retorna a lista de aluguéis realizados.
      */
@@ -184,18 +279,33 @@ public class Locadora implements ILocadora {
         String cpf = usuario.trim();
         String senhaInformada = senha.trim();
 
+        clienteLogado = null;
+        funcionarioLogado = null;
+        tipoUsuarioLogado = null;
+
         if (buscarClientePorCpf(cpf) != null
                 && "cliente".equalsIgnoreCase(senhaInformada)) {
+            clienteLogado = buscarClientePorCpf(cpf);
+            tipoUsuarioLogado = TipoUsuario.CLIENTE;
             return TipoUsuario.CLIENTE;
         }
 
         if (buscarFuncionarioPorCpf(cpf) != null
                 && "funcionario".equalsIgnoreCase(senhaInformada)) {
+            funcionarioLogado = buscarFuncionarioPorCpf(cpf);
+            tipoUsuarioLogado = TipoUsuario.FUNCIONARIO;
             return TipoUsuario.FUNCIONARIO;
         }
 
         throw new LocadoraException(
                 "Usuário ou senha inválidos.");
+    }
+
+    public void logout() {
+        clienteLogado = null;
+        funcionarioLogado = null;
+        tipoUsuarioLogado = null;
+        notificarMudanca();
     }
 
     /**
@@ -250,7 +360,14 @@ public class Locadora implements ILocadora {
                     "Veículo inválido.");
         }
 
-        // Impede alugar um veículo já locado
+        if (tipoUsuarioLogado == TipoUsuario.CLIENTE) {
+            if (clienteLogado == null
+                    || !clienteLogado.getCpf().equals(cliente.getCpf())) {
+                throw new LocadoraException(
+                        "Você só pode realizar aluguéis para si mesmo.");
+            }
+        }
+
         if (!veiculo.isDisponivel()) {
             throw new LocadoraException(
                     "Este veículo já está alugado.");
@@ -263,23 +380,17 @@ public class Locadora implements ILocadora {
 
         boolean seguroSelecionado = comSeguro && veiculo.temSeguro();
 
-        // Calcula o valor total da locação
         double valorTotal =
                 veiculo.calcularValorLocacao(dias, seguroSelecionado);
 
-        // Verifica saldo disponível do cliente
         if (valorTotal > cliente.getSaldo()) {
             throw new LocadoraException(
                     "Saldo insuficiente para este aluguel.");
         }
 
-        // Debita o valor do aluguel do saldo do cliente
         cliente.debitar(valorTotal);
-
-        // Marca o veículo como alugado
         veiculo.setDisponivel(false);
 
-        // Cria e registra o aluguel
         Aluguel aluguel =
                 new Aluguel(
                         cliente,
@@ -288,6 +399,10 @@ public class Locadora implements ILocadora {
                         seguroSelecionado);
 
         alugueis.add(aluguel);
+        salvarClientes();
+        salvarVeiculos();
+        salvarAlugueis();
+        notificarMudanca();
 
         return aluguel;
     }
@@ -305,6 +420,8 @@ public class Locadora implements ILocadora {
         }
 
         veiculo.setDisponivel(true);
+        salvarVeiculos();
+        notificarMudanca();
     }
 
     /**
@@ -317,6 +434,46 @@ public class Locadora implements ILocadora {
         }
 
         return new ArrayList<>(alugueis);
+    }
+
+    public void salvarClientes() {
+        Path caminho = Paths.get(ARQUIVO_CLIENTES);
+
+        try {
+            List<String> linhas = new ArrayList<>();
+
+            for (Cliente cliente : clientes) {
+                linhas.add(String.join("|",
+                        cliente.getCpf(),
+                        cliente.getNome(),
+                        String.valueOf(cliente.getSaldo())));
+            }
+
+            Files.write(caminho, linhas, StandardCharsets.UTF_8);
+            notificarMudanca();
+        } catch (IOException ex) {
+            System.err.println("Não foi possível salvar os clientes: " + ex.getMessage());
+        }
+    }
+
+    public void salvarFuncionarios() {
+        Path caminho = Paths.get(ARQUIVO_FUNCIONARIOS);
+
+        try {
+            List<String> linhas = new ArrayList<>();
+
+            for (Funcionario funcionario : funcionarios) {
+                linhas.add(String.join("|",
+                        funcionario.getCpf(),
+                        funcionario.getNome(),
+                        String.valueOf(funcionario.getSalario())));
+            }
+
+            Files.write(caminho, linhas, StandardCharsets.UTF_8);
+            notificarMudanca();
+        } catch (IOException ex) {
+            System.err.println("Não foi possível salvar os funcionários: " + ex.getMessage());
+        }
     }
 
     public void salvarVeiculos() {
@@ -339,9 +496,92 @@ public class Locadora implements ILocadora {
             }
 
             Files.write(caminho, linhas, StandardCharsets.UTF_8);
+            notificarMudanca();
 
         } catch (IOException ex) {
             System.err.println("Não foi possível salvar os veículos: " + ex.getMessage());
+        }
+    }
+
+    public void salvarAlugueis() {
+        Path caminho = Paths.get(ARQUIVO_ALUGUEIS);
+
+        try {
+            List<String> linhas = new ArrayList<>();
+
+            for (Aluguel aluguel : alugueis) {
+                linhas.add(String.join("|",
+                        aluguel.getCliente() != null ? aluguel.getCliente().getCpf() : "",
+                        aluguel.getVeiculo() != null ? aluguel.getVeiculo().getPlaca() : "",
+                        String.valueOf(aluguel.getDias()),
+                        String.valueOf(aluguel.isComSeguro()),
+                        String.valueOf(aluguel.getValorTotal())));
+            }
+
+            Files.write(caminho, linhas, StandardCharsets.UTF_8);
+            notificarMudanca();
+        } catch (IOException ex) {
+            System.err.println("Não foi possível salvar os aluguéis: " + ex.getMessage());
+        }
+    }
+
+    private void carregarClientesDoArquivo() {
+        Path caminho = Paths.get(ARQUIVO_CLIENTES);
+
+        if (!Files.exists(caminho)) {
+            return;
+        }
+
+        try {
+            List<String> linhas = Files.readAllLines(caminho, StandardCharsets.UTF_8);
+
+            for (String linha : linhas) {
+                if (linha == null || linha.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] partes = linha.split("\\|");
+                if (partes.length < 3) {
+                    continue;
+                }
+
+                Cliente cliente = new Cliente(partes[0], partes[1], Double.parseDouble(partes[2]));
+                clientes.add(cliente);
+            }
+        } catch (IOException ex) {
+            System.err.println("Não foi possível carregar os clientes: " + ex.getMessage());
+        } catch (NumberFormatException ex) {
+            System.err.println("Formato inválido no arquivo de clientes: " + ex.getMessage());
+        }
+    }
+
+    private void carregarFuncionariosDoArquivo() {
+        Path caminho = Paths.get(ARQUIVO_FUNCIONARIOS);
+
+        if (!Files.exists(caminho)) {
+            return;
+        }
+
+        try {
+            List<String> linhas = Files.readAllLines(caminho, StandardCharsets.UTF_8);
+
+            for (String linha : linhas) {
+                if (linha == null || linha.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] partes = linha.split("\\|");
+                if (partes.length < 3) {
+                    continue;
+                }
+
+                Funcionario funcionario = new Funcionario(partes[0], partes[1], Double.parseDouble(partes[2]));
+                funcionarios.add(funcionario);
+            }
+        } catch (IOException ex) {
+            System.err.println("Não foi possível carregar os funcionários: " + ex.getMessage());
+        } catch (NumberFormatException ex) {
+            System.err.println("Formato inválido no arquivo de funcionários: " + ex.getMessage());
         }
     }
 
@@ -386,6 +626,65 @@ public class Locadora implements ILocadora {
         } catch (NumberFormatException ex) {
             System.err.println("Formato inválido no arquivo de veículos: " + ex.getMessage());
         }
+    }
+
+    private void carregarAlugueisDoArquivo() {
+        Path caminho = Paths.get(ARQUIVO_ALUGUEIS);
+
+        if (!Files.exists(caminho)) {
+            return;
+        }
+
+        try {
+            List<String> linhas = Files.readAllLines(caminho, StandardCharsets.UTF_8);
+
+            for (String linha : linhas) {
+                if (linha == null || linha.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] partes = linha.split("\\|");
+                if (partes.length < 5) {
+                    continue;
+                }
+
+                Cliente cliente = buscarClientePorCpf(partes[0]);
+                Veiculo veiculo = buscarVeiculoPorPlaca(partes[1]);
+
+                if (cliente == null || veiculo == null) {
+                    continue;
+                }
+
+                int dias = Integer.parseInt(partes[2]);
+                boolean comSeguro = Boolean.parseBoolean(partes[3]);
+
+                aluguelJaExiste(cliente, veiculo, dias, comSeguro);
+                alugueis.add(new Aluguel(cliente, veiculo, dias, comSeguro));
+            }
+        } catch (IOException ex) {
+            System.err.println("Não foi possível carregar os aluguéis: " + ex.getMessage());
+        } catch (NumberFormatException ex) {
+            System.err.println("Formato inválido no arquivo de aluguéis: " + ex.getMessage());
+        }
+    }
+
+    private void aluguelJaExiste(Cliente cliente, Veiculo veiculo, int dias, boolean comSeguro) {
+        for (Aluguel aluguel : alugueis) {
+            if (aluguel.getCliente().equals(cliente)
+                    && aluguel.getVeiculo().equals(veiculo)
+                    && aluguel.getDias() == dias
+                    && aluguel.isComSeguro() == comSeguro) {
+                return;
+            }
+        }
+    }
+
+    private void removerAlugueisDoCliente(Cliente cliente) {
+        alugueis.removeIf(aluguel -> aluguel.getCliente() != null && aluguel.getCliente().equals(cliente));
+    }
+
+    private void removerAlugueisDoVeiculo(Veiculo veiculo) {
+        alugueis.removeIf(aluguel -> aluguel.getVeiculo() != null && aluguel.getVeiculo().equals(veiculo));
     }
 
     private Veiculo criarVeiculo(String tipo,

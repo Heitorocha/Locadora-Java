@@ -1,11 +1,10 @@
 package locadora.app.ui;
 
+import java.awt.*;
+import javax.swing.*;
 import locadora.model.Aluguel;
 import locadora.model.Veiculo;
 import locadora.service.Locadora;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class DashboardPanel extends JPanel {
 
@@ -24,6 +23,8 @@ public class DashboardPanel extends JPanel {
         this.locadora = locadora;
 
         setLayout(new BorderLayout(15, 15));
+
+        locadora.adicionarListener(this::atualizarDashboard);
 
         criarPainelResumo();
         criarPainelHistorico();

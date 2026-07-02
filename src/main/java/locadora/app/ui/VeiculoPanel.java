@@ -1,13 +1,12 @@
 package locadora.app.ui;
 
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import locadora.model.Carro;
 import locadora.model.Moto;
 import locadora.model.Veiculo;
 import locadora.service.Locadora;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 
 public class VeiculoPanel extends JPanel {
 
@@ -28,6 +27,8 @@ public class VeiculoPanel extends JPanel {
         this.locadora = locadora;
 
         setLayout(new BorderLayout(10, 10));
+
+        locadora.adicionarListener(this::atualizarTabela);
 
         criarFormulario();
         criarTabela();
@@ -230,7 +231,7 @@ public class VeiculoPanel extends JPanel {
             if (veiculoSelecionado != null) {
 
                 if (!veiculoSelecionado.getTipo().equals(tipo)) {
-                    locadora.getVeiculos().remove(veiculoSelecionado);
+                    locadora.removerVeiculo(veiculoSelecionado);
                     locadora.adicionarVeiculo(
                             criarVeiculo(tipo, placa, modelo, diaria, cor, marca, seguro));
                 } else {
@@ -302,10 +303,7 @@ public class VeiculoPanel extends JPanel {
                 locadora.getVeiculos()
                         .get(linha);
 
-        locadora.getVeiculos()
-                .remove(veiculo);
-
-        locadora.salvarVeiculos();
+        locadora.removerVeiculo(veiculo);
 
         atualizarTabela();
 

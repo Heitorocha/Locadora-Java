@@ -1,35 +1,31 @@
 package locadora.app.ui;
 
-import locadora.service.Locadora;
-
+import java.awt.*;
 import javax.swing.*;
+import locadora.service.Locadora;
 
 public class DashboardFrame extends JFrame {
 
-    public DashboardFrame(Locadora locadora,
-                          Locadora.TipoUsuario tipoUsuario) {
+    public DashboardFrame(Locadora locadora) {
 
         setTitle("Locadora de Veículos");
         setSize(1000, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
 
-        DashboardPanel dashboardPanel =
-                new DashboardPanel(locadora);
+        DashboardPanel dashboardPanel = new DashboardPanel(locadora);
 
         final ClientePanel[] clientePanelRef = new ClientePanel[1];
         final VeiculoPanel[] veiculoPanelRef = new VeiculoPanel[1];
         final RelatorioPanel[] relatorioPanelRef = new RelatorioPanel[1];
+        Locadora.TipoUsuario tipoUsuario = locadora.getTipoUsuarioLogado();
 
-        AluguelPanel aluguelPanel =
-                new AluguelPanel(locadora);
+        AluguelPanel aluguelPanel = new AluguelPanel(locadora);
 
-        JTabbedPane abas =
-                new JTabbedPane();
+        JTabbedPane abas = new JTabbedPane();
 
-        abas.addTab(
-                "Dashboard",
-                dashboardPanel);
+        abas.addTab("Dashboard", dashboardPanel);
 
         if (tipoUsuario == Locadora.TipoUsuario.FUNCIONARIO) {
             clientePanelRef[0] = new ClientePanel(locadora);
@@ -46,6 +42,18 @@ public class DashboardFrame extends JFrame {
             abas.addTab("Relatórios", relatorioPanelRef[0]);
         }
 
+        JPanel topo = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton botaoSair = new JButton("Sair");
+        botaoSair.addActionListener(e -> {
+            locadora.logout();
+            dispose();
+            new LoginFrame(locadora);
+        });
+        topo.add(botaoSair);
+
+        add(topo, BorderLayout.NORTH);
+        add(abas, BorderLayout.CENTER);
+
         abas.addChangeListener(e -> {
             if (clientePanelRef[0] != null) {
                 clientePanelRef[0].atualizarTabela();
@@ -55,8 +63,6 @@ public class DashboardFrame extends JFrame {
             }
             dashboardPanel.atualizarDashboard();
         });
-
-        add(abas);
 
         Timer timer = new Timer(1000, e -> {
             if (clientePanelRef[0] != null) {

@@ -1,10 +1,9 @@
 package locadora.app.ui;
 
+import java.awt.*;
+import javax.swing.*;
 import locadora.exception.LocadoraException;
 import locadora.service.Locadora;
-
-import javax.swing.*;
-import java.awt.*;
 
 public class LoginFrame extends JFrame {
 
@@ -36,12 +35,11 @@ public class LoginFrame extends JFrame {
         botaoEntrar.addActionListener(e -> {
 
             try {
-                Locadora.TipoUsuario tipoUsuario =
-                        locadora.autenticar(
-                                campoUsuario.getText(),
-                                new String(campoSenha.getPassword()));
+                locadora.autenticar(
+                        campoUsuario.getText(),
+                        new String(campoSenha.getPassword()));
 
-                new DashboardFrame(locadora, tipoUsuario);
+                new DashboardFrame(locadora);
                 dispose();
 
             } catch (LocadoraException ex) {

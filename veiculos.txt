@@ -1,2 +1,4 @@
-Carro|ABC-1234|Sedan|150.0|Preto|Toyota|true|true
-Moto|XYZ-4321|Sport|90.0|Vermelho|Honda|false|true
+Carro|XYZ-9999|Civic|120.0|Azul|Honda|true|false
+Carro|ABC1234|Onix|100.0|Preto|Chevrolet|false|true
+Carro|ABC-4444|Duster|200.0|Preto|Honda|true|false
+Carro|BBB-3333|Fusca|50.0|Azul|Honda|true|false

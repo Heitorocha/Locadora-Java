@@ -1,11 +1,10 @@
 package locadora.app.ui;
 
-import locadora.model.Cliente;
-import locadora.service.Locadora;
-
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import locadora.model.Cliente;
+import locadora.service.Locadora;
 
 public class ClientePanel extends JPanel {
 
@@ -29,6 +28,8 @@ public class ClientePanel extends JPanel {
         this.locadora = locadora;
 
         setLayout(new BorderLayout(10, 10));
+
+        locadora.adicionarListener(this::atualizarTabela);
 
         criarFormulario();
         criarTabela();
@@ -243,8 +244,7 @@ public class ClientePanel extends JPanel {
                 locadora.getClientes()
                         .get(linha);
 
-        locadora.getClientes()
-                .remove(cliente);
+        locadora.removerCliente(cliente);
 
         atualizarTabela();
 
