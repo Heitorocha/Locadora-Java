@@ -1,0 +1,2 @@
+Carro|ABC-1234|Sedan|150.0|Preto|Toyota|true|true
+Moto|XYZ-4321|Sport|90.0|Vermelho|Honda|false|true

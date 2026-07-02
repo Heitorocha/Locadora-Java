@@ -242,6 +242,8 @@ public class VeiculoPanel extends JPanel {
                     veiculoSelecionado.setSeguro(seguro);
                 }
 
+                locadora.salvarVeiculos();
+
                 JOptionPane.showMessageDialog(
                         this,
                         "Veículo atualizado com sucesso!");
@@ -302,6 +304,8 @@ public class VeiculoPanel extends JPanel {
 
         locadora.getVeiculos()
                 .remove(veiculo);
+
+        locadora.salvarVeiculos();
 
         atualizarTabela();
 

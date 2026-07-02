@@ -3,10 +3,17 @@ package locadora.service;
 import locadora.exception.LocadoraException;
 import locadora.interfaces.ILocadora;
 import locadora.model.Aluguel;
+import locadora.model.Carro;
 import locadora.model.Cliente;
 import locadora.model.Funcionario;
+import locadora.model.Moto;
 import locadora.model.Veiculo;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +27,8 @@ public class Locadora implements ILocadora {
         CLIENTE,
         FUNCIONARIO
     }
+
+    private static final String ARQUIVO_VEICULOS = "veiculos.txt";
 
     // Listas principais do sistema
     private final List<Veiculo> veiculos;
@@ -36,6 +45,8 @@ public class Locadora implements ILocadora {
         clientes = new ArrayList<>();
         funcionarios = new ArrayList<>();
         alugueis = new ArrayList<>();
+
+        carregarVeiculosDoArquivo();
     }
 
     /**
@@ -43,6 +54,7 @@ public class Locadora implements ILocadora {
      */
     public void adicionarVeiculo(Veiculo veiculo) {
         veiculos.add(veiculo);
+        salvarVeiculos();
     }
 
     /**
@@ -305,5 +317,89 @@ public class Locadora implements ILocadora {
         }
 
         return new ArrayList<>(alugueis);
+    }
+
+    public void salvarVeiculos() {
+
+        Path caminho = Paths.get(ARQUIVO_VEICULOS);
+
+        try {
+            List<String> linhas = new ArrayList<>();
+
+            for (Veiculo veiculo : veiculos) {
+                linhas.add(String.join("|",
+                        veiculo.getTipo(),
+                        veiculo.getPlaca(),
+                        veiculo.getModelo(),
+                        String.valueOf(veiculo.getValorDiaria()),
+                        veiculo.getCor(),
+                        veiculo.getMarca(),
+                        String.valueOf(veiculo.temSeguro()),
+                        String.valueOf(veiculo.isDisponivel())));
+            }
+
+            Files.write(caminho, linhas, StandardCharsets.UTF_8);
+
+        } catch (IOException ex) {
+            System.err.println("Não foi possível salvar os veículos: " + ex.getMessage());
+        }
+    }
+
+    private void carregarVeiculosDoArquivo() {
+
+        Path caminho = Paths.get(ARQUIVO_VEICULOS);
+
+        if (!Files.exists(caminho)) {
+            return;
+        }
+
+        try {
+            List<String> linhas = Files.readAllLines(caminho, StandardCharsets.UTF_8);
+
+            for (String linha : linhas) {
+                if (linha == null || linha.trim().isEmpty()) {
+                    continue;
+                }
+
+                String[] partes = linha.split("\\|");
+
+                if (partes.length < 8) {
+                    continue;
+                }
+
+                String tipo = partes[0];
+                String placa = partes[1];
+                String modelo = partes[2];
+                double diaria = Double.parseDouble(partes[3]);
+                String cor = partes[4];
+                String marca = partes[5];
+                boolean seguro = Boolean.parseBoolean(partes[6]);
+                boolean disponivel = Boolean.parseBoolean(partes[7]);
+
+                Veiculo veiculo = criarVeiculo(tipo, placa, modelo, diaria, cor, marca, seguro);
+                veiculo.setDisponivel(disponivel);
+                veiculos.add(veiculo);
+            }
+
+        } catch (IOException ex) {
+            System.err.println("Não foi possível carregar os veículos: " + ex.getMessage());
+        } catch (NumberFormatException ex) {
+            System.err.println("Formato inválido no arquivo de veículos: " + ex.getMessage());
+        }
+    }
+
+    private Veiculo criarVeiculo(String tipo,
+                                 String placa,
+                                 String modelo,
+                                 double diaria,
+                                 String cor,
+                                 String marca,
+                                 boolean seguro) {
+
+        if ("Carro".equalsIgnoreCase(tipo)) {
+            return new Carro(placa, modelo, diaria, cor, marca, seguro);
+        }
+
+        return new Moto(placa, modelo, diaria, cor, marca, seguro);
     }
 }

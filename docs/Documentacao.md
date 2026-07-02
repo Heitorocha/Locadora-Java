@@ -55,6 +55,7 @@ src/
 
 docs/
   Documentacao.md
+veiculos.txt
 ```
 
 ### Responsabilidade dos pacotes
@@ -69,6 +70,8 @@ docs/
   - contém a aplicação principal e os painéis da interface gráfica
 - `locadora.exception`
   - contém a exceção customizada `LocadoraException`
+- `veiculos.txt`
+  - arquivo de texto usado para persistir os veículos cadastrados entre execuções
 
 ---
 
@@ -83,6 +86,7 @@ A aplicação permite:
 - gerar relatórios com veículos, clientes e aluguéis
 - validar dados de entrada (CPF, nome, saldo, placa, diária, cor, marca, dias)
 - tratar exceções de negócio, como saldo insuficiente e dados inválidos
+- persistir os veículos cadastrados em um arquivo de texto (`veiculos.txt`) para manter os dados entre execuções
 
 ---
 
@@ -278,3 +282,4 @@ java -cp bin locadora.app.Main
 - O cadastro de veículo pode ser feito e editado pela área do funcionário.
 - O seguro é opcional no aluguel e somente está disponível para veículos que possuem essa opção habilitada.
 - O sistema trata entradas inválidas e exibe mensagens de erro apropriadas.
+- Os veículos cadastrados são salvos automaticamente no arquivo `veiculos.txt`, localizado na raiz do projeto.
